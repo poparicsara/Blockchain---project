@@ -59,41 +59,57 @@ func main() {
 		os.Exit(1)
 	}
 
-	contract := network.GetContract("fabcar")
+	contract := network.GetContract("cars")
 
-	result, err := contract.EvaluateTransaction("queryAllCars")
+	// result, err := contract.EvaluateTransaction("GetAllCars")
+	// if err != nil {
+	// 	log.Fatalf("Failed to evaluate transaction: %v", err)
+	// }
+	// log.Println(string(result))
+
+	// result, err = contract.SubmitTransaction("createCar", "CAR10", "VW", "Polo", "Grey", "Mary", "3")
+	// if err != nil {
+	// 	fmt.Printf("Failed to submit transaction: %s\n", err)
+	// 	os.Exit(1)
+	// }
+	// fmt.Println(string(result))
+
+	fmt.Println("-------------- GET CAR BY ID --------------")
+	result, err := contract.EvaluateTransaction("getCarById", "5")
 	if err != nil {
 		fmt.Printf("Failed to evaluate transaction: %s\n", err)
 		os.Exit(1)
 	}
 	fmt.Println(string(result))
 
-	result, err = contract.SubmitTransaction("createCar", "CAR10", "VW", "Polo", "Grey", "Mary", "3")
-	if err != nil {
-		fmt.Printf("Failed to submit transaction: %s\n", err)
-		os.Exit(1)
-	}
-	fmt.Println(string(result))
-
-	result, err = contract.EvaluateTransaction("queryCar", "CAR10")
+	fmt.Println("-------------- GET OWNER BY ID --------------")
+	result, err = contract.EvaluateTransaction("getOwnerById", "OWNER1")
 	if err != nil {
 		fmt.Printf("Failed to evaluate transaction: %s\n", err)
 		os.Exit(1)
 	}
 	fmt.Println(string(result))
 
-	_, err = contract.SubmitTransaction("changeCarOwner", "CAR10", "Archie")
+	fmt.Println("-------------- GET CARS BY COLOR --------------")
+	result, err = contract.EvaluateTransaction("getCarsByColor", "blue")
 	if err != nil {
-		fmt.Printf("Failed to submit transaction: %s\n", err)
-		os.Exit(1)
-	}
-
-	result, err = contract.EvaluateTransaction("queryCar", "CAR10")
-	if err != nil {
-		fmt.Printf("Failed to evaluate transaction: %s\n", err)
-		os.Exit(1)
+		fmt.Println(fmt.Errorf("failed to evaluate transaction: %w", err))
+		return
 	}
 	fmt.Println(string(result))
+
+	// fmt.Println("-------------- REPAIR CAR --------------")
+	// _, err = contract.SubmitTransaction("repairCar", "1")
+	// if err != nil {
+	// 	fmt.Println(fmt.Errorf("failed to submit transaction: %w", err))
+	// 	return
+	// }
+
+	// _, err = contract.SubmitTransaction("changeCarColor", "CAR5", "blue")
+	// if err != nil {
+	// 	fmt.Printf("Failed to submit transaction: %s\n", err)
+	// 	os.Exit(1)
+	// }
 }
 
 func populateWallet(wallet *gateway.Wallet) error {

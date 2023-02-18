@@ -3,6 +3,7 @@ package chaincode
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
@@ -29,7 +30,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 		{ID: "asset3", Color: "green", Size: 10, Owner: "Jin Soo", AppraisedValue: 500},
 		{ID: "asset4", Color: "yellow", Size: 10, Owner: "Max", AppraisedValue: 600},
 		{ID: "asset5", Color: "black", Size: 15, Owner: "Adriana", AppraisedValue: 700},
-		{ID: "asset6", Color: "white", Size: 15, Owner: "Michel", AppraisedValue: 800},
+		{ID: "asset6", Color: "white", Size: 15, Owner: "Sara", AppraisedValue: 800},
 	}
 
 	for _, asset := range assets {
@@ -49,13 +50,16 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 
 // CreateAsset issues a new asset to the world state with given details.
 func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, id string, color string, size int, owner string, appraisedValue int) error {
+	log.Println("KREIRAM ASSET")
 	exists, err := s.AssetExists(ctx, id)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return fmt.Errorf("the asset %s already exists", id)
+		return fmt.Errorf("the asset %s already existssss", id)
 	}
+
+	fmt.Println(owner)
 
 	asset := Asset{
 		ID:             id,

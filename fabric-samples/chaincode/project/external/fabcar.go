@@ -7,10 +7,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 
+	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
+
+type ServerConfig struct {
+	CCID    string
+	Address string
+}
 
 // SmartContract provides functions for managing a car
 type SmartContract struct {
@@ -23,7 +30,6 @@ type Car struct {
 	Model  string `json:"model"`
 	Colour string `json:"colour"`
 	Owner  string `json:"owner"`
-	Num    int    `json:"num"`
 }
 
 // QueryResult structure used for handling result of query
@@ -35,16 +41,16 @@ type QueryResult struct {
 // InitLedger adds a base set of cars to the ledger
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	cars := []Car{
-		Car{Make: "Toyota", Model: "Prius", Colour: "blue", Owner: "Tomoko", Num: 1},
-		Car{Make: "Ford", Model: "Mustang", Colour: "red", Owner: "Brad", Num: 2},
-		Car{Make: "Hyundai", Model: "Tucson", Colour: "green", Owner: "Jin Soo", Num: 3},
-		Car{Make: "Volkswagen", Model: "Passat", Colour: "yellow", Owner: "Max", Num: 4},
-		Car{Make: "Tesla", Model: "S", Colour: "black", Owner: "Adriana", Num: 5},
-		Car{Make: "Peugeot", Model: "205", Colour: "purple", Owner: "Michel", Num: 6},
-		Car{Make: "Chery", Model: "S22L", Colour: "white", Owner: "Aarav", Num: 7},
-		Car{Make: "Fiat", Model: "Punto", Colour: "violet", Owner: "Pari", Num: 8},
-		Car{Make: "Tata", Model: "Nano", Colour: "indigo", Owner: "Valeria", Num: 9},
-		Car{Make: "Holden", Model: "Barina", Colour: "brown", Owner: "Shotaro", Num: 10},
+		Car{Make: "Toyota", Model: "Prius", Colour: "blue", Owner: "Tomoko"},
+		Car{Make: "Ford", Model: "Mustang", Colour: "red", Owner: "Brad"},
+		Car{Make: "Hyundai", Model: "Tucson", Colour: "green", Owner: "Jin Soo"},
+		Car{Make: "Volkswagen", Model: "Passat", Colour: "yellow", Owner: "Max"},
+		Car{Make: "Tesla", Model: "S", Colour: "black", Owner: "Adriana"},
+		Car{Make: "Peugeot", Model: "205", Colour: "purple", Owner: "Michel"},
+		Car{Make: "Chery", Model: "S22L", Colour: "white", Owner: "Aarav"},
+		Car{Make: "Fiat", Model: "Punto", Colour: "violet", Owner: "Pari"},
+		Car{Make: "Tata", Model: "Nano", Colour: "indigo", Owner: "Valeria"},
+		Car{Make: "Holden", Model: "Barina", Colour: "brown", Owner: "Shotaro"},
 	}
 
 	for i, car := range cars {
@@ -52,7 +58,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 		err := ctx.GetStub().PutState("CAR"+strconv.Itoa(i), carAsBytes)
 
 		if err != nil {
-			return fmt.Errorf("failed to put to world state. %s", err.Error())
+			return fmt.Errorf("Failed to put to world state. %s", err.Error())
 		}
 	}
 
@@ -60,13 +66,12 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 }
 
 // CreateCar adds a new car to the world state with given details
-func (s *SmartContract) CreateCar(ctx contractapi.TransactionContextInterface, carNumber string, make string, model string, colour string, owner string, num int) error {
+func (s *SmartContract) CreateCar(ctx contractapi.TransactionContextInterface, carNumber string, make string, model string, colour string, owner string) error {
 	car := Car{
 		Make:   make,
 		Model:  model,
 		Colour: colour,
 		Owner:  owner,
-		Num:    num,
 	}
 
 	carAsBytes, _ := json.Marshal(car)
@@ -79,7 +84,7 @@ func (s *SmartContract) QueryCar(ctx contractapi.TransactionContextInterface, ca
 	carAsBytes, err := ctx.GetStub().GetState(carNumber)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to read from world state. %s", err.Error())
+		return nil, fmt.Errorf("Failed to read from world state. %s", err.Error())
 	}
 
 	if carAsBytes == nil {
@@ -139,6 +144,11 @@ func (s *SmartContract) ChangeCarOwner(ctx contractapi.TransactionContextInterfa
 }
 
 func main() {
+	// See chaincode.env.example
+	config := ServerConfig{
+		CCID:    os.Getenv("CHAINCODE_ID"),
+		Address: os.Getenv("CHAINCODE_SERVER_ADDRESS"),
+	}
 
 	chaincode, err := contractapi.NewChaincode(new(SmartContract))
 
@@ -147,7 +157,16 @@ func main() {
 		return
 	}
 
-	if err := chaincode.Start(); err != nil {
+	server := &shim.ChaincodeServer{
+		CCID:    config.CCID,
+		Address: config.Address,
+		CC:      chaincode,
+		TLSProps: shim.TLSProperties{
+			Disabled: true,
+		},
+	}
+
+	if err := server.Start(); err != nil {
 		fmt.Printf("Error starting fabcar chaincode: %s", err.Error())
 	}
 }
