@@ -75,31 +75,45 @@ func main() {
 	// fmt.Println(string(result))
 
 	fmt.Println("-------------- GET CAR BY ID --------------")
-	result, err := contract.EvaluateTransaction("getCarById", "5")
+	result, err := contract.EvaluateTransaction("getCarById", "1")
 	if err != nil {
 		fmt.Printf("Failed to evaluate transaction: %s\n", err)
 		os.Exit(1)
 	}
 	fmt.Println(string(result))
 
-	fmt.Println("-------------- GET OWNER BY ID --------------")
-	result, err = contract.EvaluateTransaction("getOwnerById", "OWNER1")
-	if err != nil {
-		fmt.Printf("Failed to evaluate transaction: %s\n", err)
-		os.Exit(1)
-	}
-	fmt.Println(string(result))
+	// fmt.Println("-------------- GET OWNER BY ID --------------")
+	// result, err = contract.EvaluateTransaction("getOwnerById", "OWNER1")
+	// if err != nil {
+	// 	fmt.Printf("Failed to evaluate transaction: %s\n", err)
+	// 	os.Exit(1)
+	// }
+	// fmt.Println(string(result))
 
-	fmt.Println("-------------- GET CARS BY COLOR --------------")
-	result, err = contract.EvaluateTransaction("getCarsByColor", "blue")
-	if err != nil {
-		fmt.Println(fmt.Errorf("failed to evaluate transaction: %w", err))
-		return
-	}
-	fmt.Println(string(result))
+	// fmt.Println("-------------- GET CARS BY COLOR --------------")
+	// result, err = contract.EvaluateTransaction("getCarsByColor", "blue")
+	// if err != nil {
+	// 	fmt.Println(fmt.Errorf("failed to evaluate transaction: %w", err))
+	// 	return
+	// }
+	// fmt.Println(string(result))
 
 	// fmt.Println("-------------- REPAIR CAR --------------")
 	// _, err = contract.SubmitTransaction("repairCar", "1")
+	// if err != nil {
+	// 	fmt.Println(fmt.Errorf("failed to submit transaction: %w", err))
+	// 	return
+	// }
+
+	// fmt.Println("-------------- ADD MALFUNCTION --------------")
+	// _, err = contract.SubmitTransaction("addMalfunction", "1", "Broken door", "5000")
+	// if err != nil {
+	// 	fmt.Println(fmt.Errorf("failed to submit transaction: %w", err))
+	// 	return
+	// }
+
+	// fmt.Println("-------------- DELETE CAR --------------")
+	// _, err = contract.SubmitTransaction("deleteCar", "2")
 	// if err != nil {
 	// 	fmt.Println(fmt.Errorf("failed to submit transaction: %w", err))
 	// 	return

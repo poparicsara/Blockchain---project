@@ -37,6 +37,7 @@ type Car struct {
 	Color        string        `json:"color"`
 	Owner        string        `json:"owner"`
 	Malfunctions []Malfunction `json:"malfunctions"`
+	Price        float64       `json:"price"`
 }
 
 type QueryResult struct {
@@ -50,16 +51,18 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			Malfunctions: []Malfunction{
 				{Description: "Broken brake", Price: 200},
 			},
+			Price: 5000,
 		},
-		{Id: 2, Make: "Ford", Model: "Mustang", Color: "red", Owner: "1", Malfunctions: []Malfunction{}},
+		{Id: 2, Make: "Ford", Model: "Mustang", Color: "red", Owner: "1", Malfunctions: []Malfunction{}, Price: 3000},
 		{Id: 3, Make: "Hyundai", Model: "Tucson", Color: "green", Owner: "2",
 			Malfunctions: []Malfunction{
 				{Description: "Broken window", Price: 1000},
 			},
+			Price: 2500,
 		},
-		{Id: 4, Make: "Volkswagen", Model: "Passat", Color: "yellow", Owner: "2", Malfunctions: []Malfunction{}},
-		{Id: 5, Make: "Tesla", Model: "S", Color: "black", Owner: "3", Malfunctions: []Malfunction{}},
-		{Id: 6, Make: "Peugeot", Model: "205", Color: "black", Owner: "3", Malfunctions: []Malfunction{}},
+		{Id: 4, Make: "Volkswagen", Model: "Passat", Color: "yellow", Owner: "2", Malfunctions: []Malfunction{}, Price: 7000},
+		{Id: 5, Make: "Tesla", Model: "S", Color: "black", Owner: "3", Malfunctions: []Malfunction{}, Price: 20000},
+		{Id: 6, Make: "Peugeot", Model: "205", Color: "black", Owner: "3", Malfunctions: []Malfunction{}, Price: 2000},
 	}
 
 	owners := []Owner{
@@ -119,8 +122,8 @@ func (s *SmartContract) CreateCar(ctx contractapi.TransactionContextInterface, c
 }
 
 func (s *SmartContract) GetCarById(ctx contractapi.TransactionContextInterface, carId string) (*Car, error) {
-	carAsBytes, err := ctx.GetStub().GetState(carId)
 
+	carAsBytes, err := ctx.GetStub().GetState(carId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from world state. %s", err.Error())
 	}
@@ -295,6 +298,36 @@ func (s *SmartContract) ChangeCarColor(ctx contractapi.TransactionContextInterfa
 	return ctx.GetStub().PutState(carId, carAsBytes)
 }
 
+func (s *SmartContract) AddMalfunction(ctx contractapi.TransactionContextInterface, carId string, description string, price float64) error {
+
+	car, err := s.GetCarById(ctx, carId)
+	if err != nil {
+		return fmt.Errorf("Car with specified id does not exist")
+	}
+
+	malfunction := Malfunction{Description: description, Price: price}
+
+	malfunctions := car.Malfunctions
+	malfunctionsPrice := 0.0
+	for _, malfunction := range car.Malfunctions {
+		malfunctionsPrice += malfunction.Price
+	}
+
+	if (malfunctionsPrice + price) <= car.Price {
+		malfunctions = append(malfunctions, malfunction)
+
+		car.Malfunctions = malfunctions
+
+		carAsBytes, _ := json.Marshal(car)
+		ctx.GetStub().PutState(carId, carAsBytes)
+	} else {
+		fmt.Println("Price of malfunctions is bigger than price of car, so car will be deleted")
+		s.DeleteCar(ctx, carId)
+	}
+
+	return nil
+}
+
 func (s *SmartContract) RepairCar(ctx contractapi.TransactionContextInterface, carId string) error {
 
 	car, err := s.GetCarById(ctx, carId)
@@ -361,6 +394,19 @@ func (s *SmartContract) OwnerExists(ctx contractapi.TransactionContextInterface,
 	}
 
 	return owner != nil, nil
+}
+
+func (s *SmartContract) DeleteCar(ctx contractapi.TransactionContextInterface, carId string) error {
+	exists, err := s.CarExists(ctx, carId)
+	if err != nil {
+		return fmt.Errorf("failed to read from world state: %v", err)
+	}
+
+	if !exists {
+		return fmt.Errorf("the asset %s does not exist", carId)
+	}
+
+	return ctx.GetStub().DelState(carId)
 }
 
 func main() {
