@@ -66,7 +66,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	}
 
 	owners := []Owner{
-		{Id: 1, Name: "Sara", Surname: "Poparic", Email: "sarapoparic@gmail.com", Money: 5000},
+		{Id: 1, Name: "Sara", Surname: "Poparic", Email: "sarapoparic@gmail.com", Money: 10000},
 		{Id: 2, Name: "Mila", Surname: "Poparic", Email: "milapoparic@gmail.com", Money: 5000},
 		{Id: 3, Name: "Nikola", Surname: "Nikolic", Email: "nikolanikolic@gmail.com", Money: 5000},
 	}
@@ -157,40 +157,6 @@ func (s *SmartContract) GetOwnerById(ctx contractapi.TransactionContextInterface
 
 func (s *SmartContract) GetCarsByColor(ctx contractapi.TransactionContextInterface, color string) ([]*Car, error) {
 	resultIter, err := ctx.GetStub().GetStateByPartialCompositeKey("color~owner~id", []string{color})
-	if err != nil {
-		return nil, err
-	}
-
-	defer resultIter.Close()
-
-	cars := make([]*Car, 0)
-
-	for i := 0; resultIter.HasNext(); i++ {
-		responseRange, err := resultIter.Next()
-		if err != nil {
-			return nil, err
-		}
-
-		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(responseRange.Key)
-		if err != nil {
-			return nil, err
-		}
-
-		carId := compositeKeyParts[2]
-
-		carAsset, err := s.GetCarById(ctx, carId)
-		if err != nil {
-			return nil, err
-		}
-
-		cars = append(cars, carAsset)
-	}
-
-	return cars, nil
-}
-
-func (s *SmartContract) GetCarsByOwner(ctx contractapi.TransactionContextInterface, owner string) ([]*Car, error) {
-	resultIter, err := ctx.GetStub().GetStateByPartialCompositeKey("color~owner~id", []string{"", owner})
 	if err != nil {
 		return nil, err
 	}
@@ -363,20 +329,66 @@ func (s *SmartContract) RepairCar(ctx contractapi.TransactionContextInterface, c
 	return nil
 }
 
-// // ChangeCarOwner updates the owner field of car with given id in world state
-// func (s *SmartContract) ChangeCarOwner(ctx contractapi.TransactionContextInterface, carId int, newOwner int) error {
-// 	car, err := s.GetCarById(ctx, carId)
+func (s *SmartContract) TransferOwnership(ctx contractapi.TransactionContextInterface, carId string, newOwner string, acceptsMalfunctions bool) error {
 
-// 	if err != nil {
-// 		return err
-// 	}
+	carExists, err := s.CarExists(ctx, carId)
+	if err != nil {
+		return fmt.Errorf("failed to read from world state: %v", err)
+	}
 
-// 	car.Owner = newOwner
+	ownerExists, err := s.OwnerExists(ctx, newOwner)
+	if err != nil {
+		return fmt.Errorf("failed to read from world state: %v", err)
+	}
 
-// 	carAsBytes, _ := json.Marshal(car)
+	if carExists && ownerExists {
+		car, err := s.GetCarById(ctx, carId)
+		if err != nil {
+			fmt.Println("Car with specified id does not exist")
+			return err
+		}
 
-// 	return ctx.GetStub().PutState("CAR"+strconv.Itoa(carId), carAsBytes)
-// }
+		owner, err := s.GetOwnerById(ctx, newOwner)
+		if err != nil {
+			fmt.Println("Car with specified id does not exist")
+			return err
+		}
+
+		if len(car.Malfunctions) == 0 {
+			if owner.Money >= car.Price {
+				car.Owner = strconv.Itoa(owner.Id)
+				carAsBytes, _ := json.Marshal(car)
+				ctx.GetStub().PutState(carId, carAsBytes)
+
+				ownerMoney := owner.Money - car.Price
+				owner.Money = ownerMoney
+				ownerAsBytes, _ := json.Marshal(owner)
+				ctx.GetStub().PutState(newOwner, ownerAsBytes)
+			}
+		} else if len(car.Malfunctions) > 0 && acceptsMalfunctions {
+			malfunctionsPrice := 0.0
+			for _, malfunction := range car.Malfunctions {
+				malfunctionsPrice += malfunction.Price
+			}
+
+			carPrice := car.Price - malfunctionsPrice
+
+			if owner.Money >= carPrice {
+				car.Owner = strconv.Itoa(owner.Id)
+				carAsBytes, _ := json.Marshal(car)
+				ctx.GetStub().PutState(carId, carAsBytes)
+
+				ownerMoney := owner.Money - car.Price
+				owner.Money = ownerMoney
+				ownerAsBytes, _ := json.Marshal(owner)
+				ctx.GetStub().PutState(newOwner, ownerAsBytes)
+			}
+		}
+
+	}
+
+	return nil
+}
 
 func (s *SmartContract) CarExists(ctx contractapi.TransactionContextInterface, carId string) (bool, error) {
 	car, err := ctx.GetStub().GetState(carId)

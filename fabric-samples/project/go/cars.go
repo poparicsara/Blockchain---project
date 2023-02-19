@@ -112,6 +112,13 @@ func main() {
 	// 	return
 	// }
 
+	fmt.Println("-------------- TRANSFER OWNERSHIP --------------")
+	_, err = contract.SubmitTransaction("transferOwnership", "5", "OWNER2", "false")
+	if err != nil {
+		fmt.Println(fmt.Errorf("failed to submit transaction: %w", err))
+		return
+	}
+
 	// fmt.Println("-------------- DELETE CAR --------------")
 	// _, err = contract.SubmitTransaction("deleteCar", "2")
 	// if err != nil {
