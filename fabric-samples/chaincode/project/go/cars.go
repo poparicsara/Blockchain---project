@@ -257,11 +257,28 @@ func (s *SmartContract) ChangeCarColor(ctx contractapi.TransactionContextInterfa
 		return err
 	}
 
+	oldKey, _ := ctx.GetStub().CreateCompositeKey("color~owner~id", []string{car.Color, car.Owner, strconv.Itoa(car.Id)})
+
 	car.Color = color
-
 	carAsBytes, _ := json.Marshal(car)
+	err = ctx.GetStub().PutState(carId, carAsBytes)
+	if err != nil {
+		return err
+	}
 
-	return ctx.GetStub().PutState(carId, carAsBytes)
+	key, err := ctx.GetStub().CreateCompositeKey("color~owner~id", []string{color, car.Owner, strconv.Itoa(car.Id)})
+	if err != nil {
+		return err
+	}
+
+	ctx.GetStub().DelState(oldKey)
+	value := []byte{0x00}
+	err = ctx.GetStub().PutState(key, value)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *SmartContract) AddMalfunction(ctx contractapi.TransactionContextInterface, carId string, description string, price float64) error {
