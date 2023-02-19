@@ -53,15 +53,15 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			},
 			Price: 5000,
 		},
-		{Id: 2, Make: "Ford", Model: "Mustang", Color: "red", Owner: "1", Malfunctions: []Malfunction{}, Price: 3000},
+		{Id: 2, Make: "Ford", Model: "Mustang", Color: "blue", Owner: "1", Malfunctions: []Malfunction{}, Price: 3000},
 		{Id: 3, Make: "Hyundai", Model: "Tucson", Color: "green", Owner: "2",
 			Malfunctions: []Malfunction{
 				{Description: "Broken window", Price: 1000},
 			},
 			Price: 2500,
 		},
-		{Id: 4, Make: "Volkswagen", Model: "Passat", Color: "yellow", Owner: "2", Malfunctions: []Malfunction{}, Price: 7000},
-		{Id: 5, Make: "Tesla", Model: "S", Color: "black", Owner: "3", Malfunctions: []Malfunction{}, Price: 20000},
+		{Id: 4, Make: "Volkswagen", Model: "Passat", Color: "blue", Owner: "2", Malfunctions: []Malfunction{}, Price: 7000},
+		{Id: 5, Make: "Tesla", Model: "S", Color: "blue", Owner: "3", Malfunctions: []Malfunction{}, Price: 20000},
 		{Id: 6, Make: "Peugeot", Model: "205", Color: "black", Owner: "3", Malfunctions: []Malfunction{}, Price: 2000},
 	}
 

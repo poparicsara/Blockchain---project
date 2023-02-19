@@ -74,8 +74,16 @@ func main() {
 	// }
 	// fmt.Println(string(result))
 
-	fmt.Println("-------------- GET CAR BY ID --------------")
-	result, err := contract.EvaluateTransaction("getCarById", "1")
+	fmt.Println("-------------- GET CAR BY COLOR --------------")
+	result, err := contract.EvaluateTransaction("getCarsByColor", "blue")
+	if err != nil {
+		fmt.Printf("Failed to evaluate transaction: %s\n", err)
+		os.Exit(1)
+	}
+	fmt.Println(string(result))
+
+	fmt.Println("-------------- GET CAR BY COLOR AND OWNER --------------")
+	result, err = contract.EvaluateTransaction("getCarsByColorAndOwner", "blue", "1")
 	if err != nil {
 		fmt.Printf("Failed to evaluate transaction: %s\n", err)
 		os.Exit(1)
@@ -112,12 +120,12 @@ func main() {
 	// 	return
 	// }
 
-	fmt.Println("-------------- TRANSFER OWNERSHIP --------------")
-	_, err = contract.SubmitTransaction("transferOwnership", "5", "OWNER2", "false")
-	if err != nil {
-		fmt.Println(fmt.Errorf("failed to submit transaction: %w", err))
-		return
-	}
+	// fmt.Println("-------------- TRANSFER OWNERSHIP --------------")
+	// _, err = contract.SubmitTransaction("transferOwnership", "5", "OWNER2", "false")
+	// if err != nil {
+	// 	fmt.Println(fmt.Errorf("failed to submit transaction: %w", err))
+	// 	return
+	// }
 
 	// fmt.Println("-------------- DELETE CAR --------------")
 	// _, err = contract.SubmitTransaction("deleteCar", "2")
