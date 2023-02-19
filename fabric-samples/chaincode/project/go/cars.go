@@ -53,7 +53,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			},
 			Price: 5000,
 		},
-		{Id: 2, Make: "Ford", Model: "Mustang", Color: "blue", Owner: "1", Malfunctions: []Malfunction{}, Price: 3000},
+		{Id: 2, Make: "Ford", Model: "Mustang", Color: "blue", Owner: "3", Malfunctions: []Malfunction{}, Price: 3000},
 		{Id: 3, Make: "Hyundai", Model: "Tucson", Color: "green", Owner: "2",
 			Malfunctions: []Malfunction{
 				{Description: "Broken window", Price: 1000},
@@ -367,21 +367,46 @@ func (s *SmartContract) TransferOwnership(ctx contractapi.TransactionContextInte
 
 		owner, err := s.GetOwnerById(ctx, newOwner)
 		if err != nil {
-			fmt.Println("Car with specified id does not exist")
+			fmt.Println("Owner with specified id does not exist")
 			return err
 		}
 
-		if len(car.Malfunctions) == 0 {
-			if owner.Money >= car.Price {
-				car.Owner = strconv.Itoa(owner.Id)
-				carAsBytes, _ := json.Marshal(car)
-				ctx.GetStub().PutState(carId, carAsBytes)
+		if len(car.Malfunctions) == 0 && owner.Money >= car.Price {
 
-				ownerMoney := owner.Money - car.Price
-				owner.Money = ownerMoney
-				ownerAsBytes, _ := json.Marshal(owner)
-				ctx.GetStub().PutState(newOwner, ownerAsBytes)
+			oldOwnerId := car.Owner
+
+			oldKey, _ := ctx.GetStub().CreateCompositeKey("color~owner~id", []string{car.Color, car.Owner, carId})
+			car.Owner = strconv.Itoa(owner.Id)
+			carAsBytes, _ := json.Marshal(car)
+			ctx.GetStub().PutState(carId, carAsBytes)
+
+			key, err := ctx.GetStub().CreateCompositeKey("color~owner~id", []string{car.Color, strconv.Itoa(owner.Id), strconv.Itoa(car.Id)})
+			if err != nil {
+				return err
 			}
+
+			ctx.GetStub().DelState(oldKey)
+			value := []byte{0x00}
+			err = ctx.GetStub().PutState(key, value)
+			if err != nil {
+				return err
+			}
+
+			ownerMoney := owner.Money - car.Price
+			owner.Money = ownerMoney
+			ownerAsBytes, _ := json.Marshal(owner)
+			ctx.GetStub().PutState(newOwner, ownerAsBytes)
+
+			oldOwner, err := s.GetOwnerById(ctx, "OWNER"+oldOwnerId)
+			if err != nil {
+				fmt.Println("Owner with specified id does not exist")
+				return err
+			}
+
+			oldOwner.Money = oldOwner.Money + car.Price
+			oldOwnerAsBytes, _ := json.Marshal(oldOwner)
+			ctx.GetStub().PutState("OWNER"+oldOwnerId, oldOwnerAsBytes)
+
 		} else if len(car.Malfunctions) > 0 && acceptsMalfunctions {
 			malfunctionsPrice := 0.0
 			for _, malfunction := range car.Malfunctions {
@@ -391,15 +416,50 @@ func (s *SmartContract) TransferOwnership(ctx contractapi.TransactionContextInte
 			carPrice := car.Price - malfunctionsPrice
 
 			if owner.Money >= carPrice {
+				oldOwnerId := car.Owner
+
+				oldKey, _ := ctx.GetStub().CreateCompositeKey("color~owner~id", []string{car.Color, car.Owner, carId})
 				car.Owner = strconv.Itoa(owner.Id)
 				carAsBytes, _ := json.Marshal(car)
 				ctx.GetStub().PutState(carId, carAsBytes)
 
-				ownerMoney := owner.Money - car.Price
+				key, err := ctx.GetStub().CreateCompositeKey("color~owner~id", []string{car.Color, strconv.Itoa(owner.Id), strconv.Itoa(car.Id)})
+				if err != nil {
+					return err
+				}
+
+				ctx.GetStub().DelState(oldKey)
+				value := []byte{0x00}
+				err = ctx.GetStub().PutState(key, value)
+				if err != nil {
+					return err
+				}
+
+				ownerMoney := owner.Money - carPrice
 				owner.Money = ownerMoney
 				ownerAsBytes, _ := json.Marshal(owner)
 				ctx.GetStub().PutState(newOwner, ownerAsBytes)
+
+				oldOwner, err := s.GetOwnerById(ctx, "OWNER"+oldOwnerId)
+				if err != nil {
+					fmt.Println("Owner with specified id does not exist")
+					return err
+				}
+
+				oldOwner.Money = oldOwner.Money + carPrice
+				oldOwnerAsBytes, _ := json.Marshal(oldOwner)
+				ctx.GetStub().PutState("OWNER"+oldOwnerId, oldOwnerAsBytes)
+
+			} else {
+				return fmt.Errorf("new owner does not have enough money to buy this car")
 			}
+		} else if len(car.Malfunctions) > 0 && !acceptsMalfunctions {
+
+			return fmt.Errorf("car has malfunctions and new owner does not want them")
+
+		} else if len(car.Malfunctions) == 0 && owner.Money < car.Price {
+
+			return fmt.Errorf("new owner does not have enough money to buy this car")
 		}
 
 	}
