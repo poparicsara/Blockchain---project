@@ -39,8 +39,8 @@ func main() {
 		"test-network",
 		"organizations",
 		"peerOrganizations",
-		"org1.example.com",
-		"connection-org1.yaml",
+		"org4.example.com",
+		"connection-org4.yaml",
 	)
 
 	gw, err := gateway.Connect(
@@ -134,7 +134,8 @@ func main() {
 	// 	return
 	// }
 
-	// _, err = contract.SubmitTransaction("changeCarColor", "CAR5", "blue")
+	// fmt.Println("-------------- CHANGE COLOR --------------")
+	// _, err = contract.SubmitTransaction("changeCarColor", "5", "pink")
 	// if err != nil {
 	// 	fmt.Printf("Failed to submit transaction: %s\n", err)
 	// 	os.Exit(1)
@@ -148,9 +149,9 @@ func populateWallet(wallet *gateway.Wallet) error {
 		"test-network",
 		"organizations",
 		"peerOrganizations",
-		"org1.example.com",
+		"org4.example.com",
 		"users",
-		"User1@org1.example.com",
+		"User1@org4.example.com",
 		"msp",
 	)
 
@@ -176,7 +177,7 @@ func populateWallet(wallet *gateway.Wallet) error {
 		return err
 	}
 
-	identity := gateway.NewX509Identity("Org1MSP", string(cert), string(key))
+	identity := gateway.NewX509Identity("Org4MSP", string(cert), string(key))
 
 	err = wallet.Put("appUser", identity)
 	if err != nil {
